@@ -1,11 +1,9 @@
 import { Button } from '@mui/material';
 import { useState } from 'react';
-import { useTheme } from '@mui/material/styles';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 
 export default function SubscribeButton({ channelId, onSubscribe }) {
-  const theme = useTheme();
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   const handleClick = () => {
