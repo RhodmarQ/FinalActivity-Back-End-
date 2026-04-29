@@ -3,7 +3,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import useAuth from '../context/useAuth';
-import { apiVideos } from '../api/axios';
+import { apiVideos, apiUsers } from '../api/axios';
 
 export default function VideoCard({ video, fullWidth = false }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -16,8 +16,11 @@ export default function VideoCard({ video, fullWidth = false }) {
   const handleClick = async () => {
     try {
       await apiVideos.incrementView(video.id);
+      if (user) {
+        await apiUsers.addToHistory(user.id, video.id);
+      }
     } catch (err) {
-      console.error('View increment failed', err);
+      console.error('View increment or history add failed', err);
     }
     navigate(`/watch/${video.id}`);
   };

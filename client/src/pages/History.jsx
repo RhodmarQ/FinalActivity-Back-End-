@@ -16,7 +16,7 @@ export default function History() {
       if (user) {
         try {
           const { data } = await apiUsers.getHistory(user.id);
-          setHistory(data);
+          setHistory(data.map(entry => ({ ...entry.videoId, watchedAt: entry.watchedAt })));
         } catch (err) {
           console.error('History fetch error', err);
         }
@@ -33,7 +33,7 @@ export default function History() {
     setLoading(true);
     try {
       const { data } = await apiUsers.getHistory(user.id);
-      setHistory(data);
+      setHistory(data.map(entry => ({ ...entry.videoId, watchedAt: entry.watchedAt })));
     } catch (err) {
       console.error('History refetch error', err);
     }
