@@ -29,10 +29,15 @@ export default function CommentSection({ videoId }) {
         setText('');
       } catch (err) {
         console.error('Comment failed', err);
+        alert('Failed to post comment. Check server logs: ' + (err.response?.data?.message || err.message));
       } finally {
         setLoading(false);
       }
     }
+  };
+
+  const handleDeleteComment = (commentId) => {
+    setComments(comments.filter(c => c._id !== commentId));
   };
 
   return (
@@ -52,7 +57,7 @@ export default function CommentSection({ videoId }) {
         </Button>
       </Box>
       {comments.map((c) => (
-        <CommentItem key={c._id} comment={c} />
+        <CommentItem key={c._id} comment={c} onDelete={handleDeleteComment} videoId={videoId} />
       ))}
     </Box>
   );

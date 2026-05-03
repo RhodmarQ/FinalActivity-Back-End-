@@ -187,7 +187,7 @@ export default function Watch() {
           <Typography sx={{ color: '#D0D0E0', whiteSpace: 'pre-line' }}>{video.description}</Typography>
         </Box>
 
-        <CommentSection videoId={video._id} />
+        <CommentSection videoId={video._id || video.id} />
       </Box>
 
       <Box

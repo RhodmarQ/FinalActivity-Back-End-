@@ -183,10 +183,16 @@ router.get('/:id/action', auth, async (req, res) => {
   try {
     const videoId = req.params.id;
     const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    
+    if (!user) {
+      console.log('User not found');
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log('User found:', user.username);
+
     const video = await Video.findById(videoId);
-    if (!video) return res.status(404).json({ message: 'Video not found' });
+    if (!video) {
+      return res.status(404).json({ message: 'Video not found' });
+    }
     
     const isLiked = user.likes.some(id => id.toString() === videoId);
     const isDisliked = user.dislikes.some(id => id.toString() === videoId);
@@ -263,7 +269,7 @@ router.post('/users/:userId/history', auth, async (req, res) => {
 router.get('/:id/comments', async (req, res) => {
   try {
     const comments = await Comment.find({ videoId: req.params.id })
-      .populate('userId', 'username')
+      .populate('userId', 'username profilePic')
       .sort({ timestamp: -1 });
     res.json(comments);
   } catch (err) {
@@ -273,13 +279,39 @@ router.get('/:id/comments', async (req, res) => {
 
 router.post('/:id/comments', auth, async (req, res) => {
   try {
+    console.log('=== COMMENT POST DEBUG ===');
+    console.log(' - videoId:', req.params.id);
+    console.log(' - userId:', req.userId);
+    console.log(' - text:', req.body.text);
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
     const comment = new Comment({
       text: req.body.text,
       videoId: req.params.id,
       userId: req.userId
-  });
-    const newComment = await comment.save().populate('userId', 'username');
-    res.status(201).json(newComment);
+    });
+    console.log('Creating comment...');
+    await comment.save();
+    console.log('Comment saved:', comment._id);
+    await comment.populate('userId', 'username profilePic');
+    res.status(201).json(comment);
+    console.log('SUCCESS: Comment sent to client');
+  } catch (err) {
+    console.error('Comment POST error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// DELETE comment (owner only)
+router.delete('/:videoId/comments/:commentId', auth, async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.commentId).populate('userId');
+    if (!comment) return res.status(404).json({ message: 'Comment not found' });
+    if (comment.userId._id.toString() !== req.userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this comment' });
+    }
+    await Comment.findByIdAndDelete(req.params.commentId);
+    res.json({ message: 'Comment deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

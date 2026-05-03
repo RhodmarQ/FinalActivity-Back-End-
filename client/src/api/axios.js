@@ -27,6 +27,7 @@ export const apiVideos = {
   toggleDislike: (id, dislike) => API.put(`/videos/${id}/dislikes`, { dislike }),
 
   deleteVideo: (id) => API.delete(`/videos/${id}`),
+  deleteComment: (videoId, commentId) => API.delete(`/videos/${videoId}/comments/${commentId}`),
   incrementView: (id) => API.post(`/videos/${id}/view`),
   getChannel: (channelId) => API.get(`/videos/channels/${channelId}`),
   getUserAction: (id) => API.get(`/videos/${id}/action`),
