@@ -29,7 +29,7 @@ function Home() {
 
   const filteredVideos = selectedCategory === 'All' 
     ? videos 
-    : videos.filter(video => video.category === selectedCategory);
+    : videos.filter(video => (video.categories || []).includes(selectedCategory));
 
 
 
