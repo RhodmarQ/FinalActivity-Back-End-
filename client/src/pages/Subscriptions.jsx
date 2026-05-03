@@ -1,11 +1,16 @@
 import { useEffect, useState, useContext } from 'react';
-import { Box, Typography, Card, CardContent, Avatar, Button } from '@mui/material';
+import { Box, Typography, Card, CardContent, Avatar } from '@mui/material';
+import SubscribeButton from '../components/SubscribeButton';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { apiUsers } from '../api/axios';
 
 export default function Subscriptions() {
-  const { user } = useContext(AuthContext);
+  const auth = useContext(AuthContext);
+  const { user } = auth;
+  console.log('Subscriptions DEBUG - auth.user:', auth.user);
+  console.log('Subscriptions DEBUG - user:', user);
+  console.log('Subscriptions DEBUG - user._id:', user?._id, 'user.id:', user?.id);
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -18,10 +23,14 @@ export default function Subscriptions() {
       }
 
       try {
-        const { data } = await apiUsers.getSubscriptions(user.id);
-        setSubscriptions(data);
+        const userId = user._id || user.id;
+        console.log('Subscriptions DEBUG - calling getSubscriptions with userId:', userId, 'type:', typeof userId);
+        const response = await apiUsers.getSubscriptions(userId);
+        console.log('Subscriptions DEBUG - API response:', response.data);
+        setSubscriptions(response.data);
       } catch (err) {
         console.error('Error loading subscriptions:', err);
+        console.error('Error response:', err.response?.data);
       } finally {
         setLoading(false);
       }
@@ -134,24 +143,9 @@ export default function Subscriptions() {
                   </Typography>
                 </Box>
 
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Could add unsubscribe functionality here
-                  }}
-                  sx={{
-                    color: '#7C4DFF',
-                    borderColor: '#7C4DFF',
-                    '&:hover': {
-                      borderColor: '#FF00FF',
-                      color: '#FF00FF',
-                    },
-                  }}
-                >
-                  View Channel
-                </Button>
+                <Box sx={{display: 'flex', alignItems: 'center'}} onClick={(e) => e.stopPropagation()}>
+                  <SubscribeButton channelId={subscription.channelId} />
+                </Box>
               </CardContent>
             </Card>
           ))}

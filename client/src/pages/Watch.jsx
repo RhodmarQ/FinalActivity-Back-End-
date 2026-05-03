@@ -1,8 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
-import useAuth from '../context/useAuth';
+import { useAuth } from '../context/AuthContext';
 import VideoPlayer from '../components/VideoPlayer';
+
 import LikeDislike from '../components/LikeDislike';
+import DislikeButton from '../components/DislikeButton';
+
 import CommentSection from '../components/CommentSection';
 import VideoCard from '../components/VideoCard';
 import { apiVideos, apiUsers } from '../api/axios';
@@ -23,12 +26,20 @@ export default function Watch() {
   const [video, setVideo] = useState(null);
   const [recommended, setRecommended] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userLiked, setUserLiked] = useState(false);
+  const [userDisliked, setUserDisliked] = useState(false);
+  const [localLikesCount, setLocalLikesCount] = useState(0);
+  const [localDislikesCount, setLocalDislikesCount] = useState(0);
   const auth = useAuth();
+
   const navigate = useNavigate();
+
 
   useEffect(() => {
     const fetchVideo = async () => {
+      setLoading(true);
       try {
         const [{ data: videoData }, { data: recommendedData }] = await Promise.all([
           apiVideos.getById(id),
@@ -36,7 +47,11 @@ export default function Watch() {
         ]);
 
         setVideo(videoData);
+        setLocalLikesCount(videoData.likesCount || 0);
+        setLocalDislikesCount(videoData.dislikesCount || 0);
         setRecommended(recommendedData.filter((item) => item.id !== id).slice(0, 6));
+        
+
       } catch (err) {
         console.error(err);
       } finally {
@@ -46,6 +61,23 @@ export default function Watch() {
 
     if (id) fetchVideo();
   }, [id]);
+
+  useEffect(() => {
+    const fetchUserAction = async () => {
+      if (!auth.user || !id) return;
+      try {
+        const { data: actionData } = await apiVideos.getUserAction(id);
+        setUserLiked(actionData.isLiked);
+        setUserDisliked(actionData.isDisliked);
+        setLocalLikesCount(actionData.likesCount);
+        setLocalDislikesCount(actionData.dislikesCount);
+      } catch (err) {
+        console.error('Failed to fetch user action:', err);
+      }
+    };
+    fetchUserAction();
+  }, [auth.user]);
+
 
   const handlePlay = useCallback(async () => {
     if (auth.loading || !auth.user) return;
@@ -68,7 +100,7 @@ export default function Watch() {
     setDeleteDialogOpen(false);
   };
 
-  const isOwner = auth.user && video && video.channelId && video.channelId.toString() === auth.user.id;
+  const isOwner = auth.user?.id && video?.channelId && String(video.channelId) === String(auth.user.id);
   const publishedDate = video ? new Date(video.createdAt).toLocaleDateString() : '';
 
   if (loading || !video) return <Typography>Loading...</Typography>;
@@ -94,8 +126,26 @@ export default function Watch() {
               <Typography sx={{ color: '#A0A0E0', mb: 0.5 }}>{video.views?.toLocaleString() || 0} views • {publishedDate}</Typography>
               <Typography sx={{ color: '#A0A0E0' }}>Uploaded by <strong>{video.channel}</strong></Typography>
             </Box>
+
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <LikeDislike videoId={video._id || video.id} likesCount={video.likesCount} />
+
+              <LikeDislike 
+                videoId={video._id || video.id} 
+                likesCount={localLikesCount} 
+                liked={userLiked}
+                dislikesCount={localDislikesCount}
+                onDislikeChange={(newDislikesCount) => setLocalDislikesCount(newDislikesCount)}
+                onLikeChange={(newLikesCount) => setLocalLikesCount(newLikesCount)}
+              />
+              <DislikeButton 
+                videoId={video._id || video.id} 
+                dislikesCount={localDislikesCount}
+                disliked={userDisliked}
+                likesCount={localLikesCount}
+                onDislikeChange={(newDislikesCount) => setLocalDislikesCount(newDislikesCount)}
+                onLikeChange={(newLikesCount) => setLocalLikesCount(newLikesCount)}
+              />
+
               <Button
                 variant="outlined"
                 startIcon={<ShareIcon />}
@@ -128,6 +178,7 @@ export default function Watch() {
                 </Button>
               )}
             </Box>
+
           </Box>
         </Box>
 

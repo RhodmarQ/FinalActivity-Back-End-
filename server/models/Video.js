@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+
 const videoSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
@@ -8,6 +9,7 @@ const videoSchema = new mongoose.Schema({
   channel: { type: String, required: true },
   views: { type: Number, default: 0 },
   likesCount: { type: Number, default: 0 },
+  dislikesCount: { type: Number, default: 0 },
   category: { type: String, default: 'All' },
   channelId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // uploader
   comments: [{
@@ -17,6 +19,7 @@ const videoSchema = new mongoose.Schema({
   }],
   timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
+
 
 module.exports = mongoose.model('Video', videoSchema);
 

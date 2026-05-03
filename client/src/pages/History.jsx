@@ -15,8 +15,13 @@ export default function History() {
     const fetchHistory = async () => {
       if (user) {
         try {
-          const { data } = await apiUsers.getHistory(user.id);
-          setHistory(data.map(entry => ({ ...entry.videoId, watchedAt: entry.watchedAt })));
+          const userId = user._id || user.id;
+          const { data } = await apiUsers.getHistory(userId);
+          setHistory(data.map(entry => ({ 
+            ...entry.videoId._doc || entry.videoId, 
+            id: entry.videoId._id || entry.videoId.id,
+            watchedAt: entry.watchedAt 
+          })));
         } catch (err) {
           console.error('History fetch error', err);
         }
@@ -29,16 +34,21 @@ export default function History() {
   if (loading) return <Typography>Loading history...</Typography>;
   if (!user || history.length === 0) return <Typography>No watch history yet.</Typography>;
 
-  const refetchHistory = useCallback(async () => {
+  const refetchHistory = async () => {
     setLoading(true);
     try {
-      const { data } = await apiUsers.getHistory(user.id);
-      setHistory(data.map(entry => ({ ...entry.videoId, watchedAt: entry.watchedAt })));
+      const userId = user._id || user.id;
+      const { data } = await apiUsers.getHistory(userId);
+      setHistory(data.map(entry => ({ 
+        ...(entry.videoId._doc || entry.videoId), 
+        id: entry.videoId._id || entry.videoId.id || entry.videoId,
+        watchedAt: entry.watchedAt 
+      })));
     } catch (err) {
       console.error('History refetch error', err);
     }
     setLoading(false);
-  }, [user]);
+  };
 
   return (
     <Box>

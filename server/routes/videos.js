@@ -22,6 +22,31 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET videos by title search
+router.get('/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.trim() === '') {
+      return res.status(400).json({ message: 'Search query is required' });
+    }
+    const searchQuery = { title: { $regex: q.trim(), $options: 'i' } };
+    const videos = await Video.find(searchQuery)
+      .populate('channelId', 'username email profilePic')
+      .sort({ views: -1 })
+      .limit(20);
+    const videosWithChannel = videos.map(video => ({
+      ...video._doc,
+      channel: video.channelId?.username || 'Unknown Channel',
+      channelId: video.channelId?._id,
+      id: video._id
+    }));
+    res.json(videosWithChannel);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
 // GET video by id
 router.get('/:id', async (req, res) => {
   if (!req.params.id || req.params.id === 'undefined') {
@@ -56,19 +81,87 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Toggle like
-router.put('/:id/likes', async (req, res) => {
+
+
+// Toggle like - per user
+router.put('/:id/likes', auth, async (req, res) => {
   try {
-    const video = await Video.findById(req.params.id);
+    const video = await Video.findById(req.params.id).populate('channelId');
     if (!video) return res.status(404).json({ message: 'Video not found' });
-    const delta = req.body.like ? 1 : -1;
-    video.likesCount = Math.max(0, video.likesCount + delta);
+    
+
+    const user = await User.findById(req.userId);
+    const isLiked = req.body.like;
+    
+    if (isLiked) {
+      // Like: add to likes, remove from dislikes
+      if (!user.likes.some(id => id.toString() === req.params.id)) {
+        user.likes.push(new mongoose.Types.ObjectId(req.params.id));
+        video.likesCount += 1;
+      }
+      user.dislikes = user.dislikes.filter(id => id.toString() !== req.params.id.toString());
+      if (video.dislikesCount > 0) video.dislikesCount -= 1;
+    } else {
+      // Unlike
+      user.likes = user.likes.filter(id => id.toString() !== req.params.id.toString());
+      if (video.likesCount > 0) video.likesCount -= 1;
+    }
+
+    
+    await user.save();
     await video.save();
-    res.json({ likesCount: video.likesCount });
+    
+    res.json({ 
+      likesCount: video.likesCount, 
+      dislikesCount: video.dislikesCount,
+      userLiked: isLiked 
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
+
+
+// Toggle dislike - per user
+
+router.put('/:id/dislikes', auth, async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id).populate('channelId');
+    if (!video) return res.status(404).json({ message: 'Video not found' });
+    
+    const user = await User.findById(req.userId);
+    const isDisliked = req.body.dislike;
+    
+    if (isDisliked) {
+      // Dislike: add to dislikes, remove from likes
+      if (!user.dislikes.some(id => id.toString() === req.params.id.toString())) {
+        user.dislikes.push(new mongoose.Types.ObjectId(req.params.id));
+        video.dislikesCount += 1;
+      }
+      user.likes = user.likes.filter(id => id.toString() !== req.params.id.toString());
+      if (video.likesCount > 0) video.likesCount -= 1;
+    } else {
+      // Undislike
+      user.dislikes = user.dislikes.filter(id => id.toString() !== req.params.id.toString());
+      if (video.dislikesCount > 0) video.dislikesCount -= 1;
+    }
+    
+    await user.save();
+    await video.save();
+    
+    res.json({ 
+      likesCount: video.likesCount, 
+      dislikesCount: video.dislikesCount,
+      userDisliked: isDisliked 
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+
 
 // DELETE video (owner only)
 router.delete('/:id', auth, async (req, res) => {
@@ -80,6 +173,30 @@ router.delete('/:id', auth, async (req, res) => {
     }
     await Video.findByIdAndDelete(req.params.id);
     res.json({ message: 'Video deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET user action on video (auth)
+router.get('/:id/action', auth, async (req, res) => {
+  try {
+    const videoId = req.params.id;
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    const video = await Video.findById(videoId);
+    if (!video) return res.status(404).json({ message: 'Video not found' });
+    
+    const isLiked = user.likes.some(id => id.toString() === videoId);
+    const isDisliked = user.dislikes.some(id => id.toString() === videoId);
+    
+    res.json({
+      isLiked,
+      isDisliked,
+      likesCount: video.likesCount,
+      dislikesCount: video.dislikesCount
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -280,6 +397,42 @@ router.get('/channels/:channelId/subscribers', async (req, res) => {
 
     res.json({ subscribersCount: channel.subscribers.length });
   } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get channel data and videos by channel ID
+router.get('/channels/:channelId', async (req, res) => {
+  try {
+    const channelId = req.params.channelId;
+    if (!mongoose.Types.ObjectId.isValid(channelId)) {
+      return res.status(404).json({ message: 'Invalid channel ID' });
+    }
+    const channel = await User.findById(channelId).select('username email profilePic subscribers');
+    if (!channel) {
+      return res.status(404).json({ message: 'Channel not found' });
+    }
+    const videos = await Video.find({ channelId }).populate('channelId', 'username email profilePic')
+      .sort({ createdAt: -1 }).limit(20);
+    const videosWithChannel = videos.map(video => ({
+      ...video._doc,
+      channel: video.channelId?.username || channel.username,
+      channelPic: video.channelId?.profilePic || channel.profilePic,
+      channelId: video.channelId?._id || channel._id,
+      id: video._id
+    }));
+    res.json({
+      channel: {
+        id: channel._id,
+        username: channel.username,
+        email: channel.email || '',
+        profilePic: channel.profilePic || '',
+        subscribersCount: channel.subscribers.length
+      },
+      videos: videosWithChannel
+    });
+  } catch (err) {
+    console.error('Channel fetch error:', err);
     res.status(500).json({ message: err.message });
   }
 });

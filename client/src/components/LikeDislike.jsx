@@ -3,23 +3,43 @@ import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import { useState } from 'react';
 import { apiVideos } from '../api/axios';
 
-export default function LikeDislike({ videoId, likesCount = 0 }) {
-  const [liked, setLiked] = useState(false);
+
+export default function LikeDislike({ 
+  videoId, 
+  likesCount = 0, 
+  liked: initialLiked = false,
+  onDislikeChange,
+  onLikeChange
+ }) {
+  const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(likesCount);
+
+
 
   const handleLike = async () => {
     try {
       const isLiked = !liked;
       setLiked(isLiked);
       setCount(isLiked ? count + 1 : Math.max(0, count - 1));
-      await apiVideos.toggleLike(videoId, isLiked);
+      
+      const response = await apiVideos.toggleLike(videoId, isLiked);
+      
+      setCount(response.data.likesCount);
+      
+      // Update dislike count from response
+      if (onDislikeChange && response.data.dislikesCount !== undefined) {
+        onDislikeChange(response.data.dislikesCount);
+      }
+      if (onLikeChange && response.data.likesCount !== undefined) {
+        onLikeChange(response.data.likesCount);
+      }
     } catch (err) {
       console.error('Like failed', err);
-      // Revert
       setLiked(!liked);
       setCount(likesCount);
     }
   };
+
 
   return (
     <Stack

@@ -14,10 +14,14 @@ const userSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     subscribedAt: { type: Date, default: Date.now }
   }],
+
   watchHistory: [{
     videoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Video' },
     watchedAt: { type: Date, default: Date.now }
-  }]
+  }],
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }],
+  dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }]
+
 }, { timestamps: true });
 
 // Hash password

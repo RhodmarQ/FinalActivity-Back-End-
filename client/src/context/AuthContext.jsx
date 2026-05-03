@@ -15,22 +15,35 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    if (savedToken) {
-      setToken(savedToken);
-      try {
-        const payload = JSON.parse(atob(savedToken.split('.')[1]));
-        setUser({ id: payload.userId });
-      } catch {}
-    }
-    setLoading(false);
+    const initAuth = async () => {
+      const savedToken = localStorage.getItem('token');
+      if (savedToken) {
+        setToken(savedToken);
+        try {
+          // Fetch full user profile
+          const { data } = await apiAuth.getProfile();
+          data.id = data._id;
+          setUser(data);
+        } catch (err) {
+          // Invalid token, logout
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
+        }
+      }
+      setLoading(false);
+    };
+    initAuth();
   }, []);
+
 
   const login = async (credentials) => {
     try {
       const { data } = await apiAuth.login(credentials);
       localStorage.setItem('token', data.token);
       setToken(data.token);
+      data.user.id = data.user._id || data.user.id;
+      data.user.id = data.user._id || data.user.id;
       setUser(data.user);
       return data.user;
     } catch (err) {

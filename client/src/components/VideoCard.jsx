@@ -1,5 +1,5 @@
 import { Card, CardMedia, CardContent, Typography, Box } from '@mui/material';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import useAuth from '../context/useAuth';
@@ -7,11 +7,9 @@ import { apiVideos, apiUsers } from '../api/axios';
 
 export default function VideoCard({ video, fullWidth = false }) {
   const [isHovered, setIsHovered] = useState(false);
-  const previewRef = useRef(null);
   const navigate = useNavigate();
   const theme = useTheme();
   const { user } = useAuth();
-  const isOwner = user && video && video.channelId?.toString() === user.id;
 
   const handleClick = async () => {
     try {
@@ -23,6 +21,12 @@ export default function VideoCard({ video, fullWidth = false }) {
       console.error('View increment or history add failed', err);
     }
     navigate(`/watch/${video.id}`);
+  };
+
+  const getYouTubeId = (url) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
   return (
@@ -54,40 +58,39 @@ export default function VideoCard({ video, fullWidth = false }) {
           height: 180,
         }}
       >
-        {/* Thumbnail - Show when not hovering */}
-        {!isHovered && (
-          <CardMedia
-            component="img"
-            image={video.thumbnail || 'https://picsum.photos/1280/720?random=1?blur'}
-            alt={video.title}
-            onError={(e) => {
-              e.target.src = 'https://picsum.photos/1280/720?random=1?blur';
-            }}
-            sx={{
-              height: '100%',
-              width: '100%',
-              objectFit: 'cover',
-              transition: 'transform 0.3s ease',
-            }}
-          />
-        )}
+        <CardMedia
+          component="img"
+          image={video.thumbnail || 'https://picsum.photos/1280/720?random=1?blur'}
+          alt={video.title}
+          onError={(e) => {
+            e.target.src = 'https://picsum.photos/1280/720?random=1?blur';
+          }}
+          sx={{
+            height: '100%',
+            width: '100%',
+            objectFit: 'cover',
+            transition: 'all 0.3s ease',
+            transform: isHovered ? 'scale(1.02)' : 'scale(1)',
+            filter: isHovered ? 'brightness(1.05)' : 'brightness(1)',
+          }}
+        />
 
-        {/* YouTube Video Preview - Show on hover */}
+        {/* YouTube Preview - plays on hover - NO OVERLAY */}
         {isHovered && video.youtubeUrl && (
           <iframe
-            ref={previewRef}
-            src={`https://www.youtube.com/embed/${video.youtubeUrl.split('v=')[1] || video.youtubeUrl.split('youtu.be/')[1]}?autoplay=1&mute=1&controls=0&modestbranding=1`}
+            src={`https://www.youtube.com/embed/${getYouTubeId(video.youtubeUrl)}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&disablekb=1&fs=0&branding=0&ab=0&cc_load_policy=0`}
             style={{
-              height: '100%',
-              width: '100%',
-              border: 'none',
               position: 'absolute',
               top: 0,
               left: 0,
+              width: '100%',
+              height: '100%',
+              border: 'none',
               pointerEvents: 'none',
             }}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
+            allowFullScreen={false}
+            title={`Preview - ${video.title}`}
           />
         )}
 
@@ -158,5 +161,4 @@ export default function VideoCard({ video, fullWidth = false }) {
     </Card>
   );
 }
- 
 

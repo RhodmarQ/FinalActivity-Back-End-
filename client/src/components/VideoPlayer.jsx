@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { extractYouTubeId, getYouTubeEmbedUrl, isYouTubeUrl } from '../utils/youtube';
 import SubscribeButton from './SubscribeButton';
-import useAuth from '../context/useAuth';
+import { useAuth } from '../context/AuthContext';
 
 export default function VideoPlayer({ youtubeUrl, title, thumbnail, channel, channelId, onPlay }) {
   const theme = useTheme();
