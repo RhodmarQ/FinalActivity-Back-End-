@@ -184,4 +184,222 @@ router.post("/:id/comments", auth, async (req, res) => {
   }
 });
 
+/* =========================
+   GET USER SUBSCRIPTIONS
+========================= */
+router.get("/users/:userId/subscriptions", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).populate({
+      path: 'subscriptions.channelId',
+      select: 'username email profilePic'
+    }).select('subscriptions');
+    
+    const subscriptions = user.subscriptions.map(sub => ({
+      channelId: sub.channelId._id,
+      subscribedAt: sub.subscribedAt,
+      username: sub.channelId.username,
+      email: sub.channelId.email
+    }));
+    
+    res.json(subscriptions);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* =========================
+   SUBSCRIBE TO CHANNEL
+========================= */
+router.post("/channels/:channelId/subscribe", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const channel = await User.findById(req.params.channelId);
+    
+    if (!user || !channel) {
+      return res.status(404).json({ message: "User or channel not found" });
+    }
+    
+    // Check if already subscribed
+    const alreadySubscribed = user.subscriptions.some(sub => 
+      sub.channelId.toString() === req.params.channelId
+    );
+    
+    if (alreadySubscribed) {
+      return res.status(400).json({ message: "Already subscribed" });
+    }
+    
+    // Add subscription
+    user.subscriptions.push({ 
+      channelId: req.params.channelId 
+    });
+    channel.subscribers.push({ 
+      userId: req.userId 
+    });
+    
+    await user.save();
+    await channel.save();
+    
+    res.json({ message: "Subscribed successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* =========================
+   UNSUBSCRIBE FROM CHANNEL
+========================= */
+router.delete("/channels/:channelId/subscribe", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    const channel = await User.findById(req.params.channelId);
+    
+    if (!user || !channel) {
+      return res.status(404).json({ message: "User or channel not found" });
+    }
+    
+    // Remove subscription
+    user.subscriptions = user.subscriptions.filter(sub => 
+      sub.channelId.toString() !== req.params.channelId
+    );
+    channel.subscribers = channel.subscribers.filter(sub => 
+      sub.userId.toString() !== req.userId
+    );
+    
+    await user.save();
+    await channel.save();
+    
+    res.json({ message: "Unsubscribed successfully" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* =========================
+   GET CHANNEL DATA (for Channel page)
+========================= */
+router.get("/channels/:channelId", async (req, res) => {
+  try {
+    const channelId = req.params.channelId;
+    const channel = await User.findById(channelId).select('username profilePic subscribers');
+    
+    if (!channel) {
+      return res.status(404).json({ message: "Channel not found" });
+    }
+
+    const videos = await Video.find({ channelId })
+      .populate("channelId", "username profilePic")
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    res.json({
+      videos: videos.map(v => ({
+        ...v._doc,
+        id: v._id,
+        channel: v.channelId.username,
+        channelId: v.channelId._id
+      })),
+      channel: {
+        username: channel.username,
+        profilePic: channel.profilePic,
+        subscribersCount: channel.subscribers.length
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* =========================
+   CHECK SUBSCRIPTION STATUS
+========================= */
+router.get("/channels/:channelId/subscription", auth, async (req, res) => {
+  try {
+    const channel = await User.findById(req.params.channelId).select('subscribers');
+    
+    if (!channel) {
+      return res.status(404).json({ message: "Channel not found" });
+    }
+
+    const isSubscribed = channel.subscribers.some(sub => 
+      sub.userId.toString() === req.userId
+    );
+
+    res.json({ subscribed: isSubscribed });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* =========================
+   GET SUBSCRIBERS COUNT (optional)
+========================= */
+router.get("/channels/:channelId/subscribers", async (req, res) => {
+  try {
+    const channel = await User.findById(req.params.channelId).select('subscribers');
+    
+    if (!channel) {
+      return res.status(404).json({ message: "Channel not found" });
+    }
+
+res.json({ count: channel.subscribers.length });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* =========================
+   GET USER WATCH HISTORY
+========================= */
+router.get("/users/:userId/history", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId).populate({
+      path: 'watchHistory.videoId',
+      select: 'title thumbnail youtubeUrl channel channelId views likesCount'
+    }).select('watchHistory');
+    
+    const history = user.watchHistory.map(entry => ({
+      videoId: entry.videoId,
+      watchedAt: entry.watchedAt
+    }));
+    
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* =========================
+   ADD TO WATCH HISTORY
+========================= */
+router.post("/users/:userId/history", auth, async (req, res) => {
+  try {
+    const { videoId } = req.body;
+    const user = await User.findById(req.userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Remove existing entry for this video (keep latest)
+    user.watchHistory = user.watchHistory.filter(entry => 
+      entry.videoId.toString() !== videoId
+    );
+    
+    // Add new entry at front
+    user.watchHistory.unshift({ 
+      videoId,
+      watchedAt: new Date()
+    });
+    
+    // Keep only recent 50
+    user.watchHistory = user.watchHistory.slice(0, 50);
+    
+    await user.save();
+    
+    res.json({ message: "Added to history" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;

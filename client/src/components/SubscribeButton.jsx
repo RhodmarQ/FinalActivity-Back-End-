@@ -1,15 +1,51 @@
 import { Button } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import useAuth from '../context/useAuth';
+import { apiUsers } from '../api/axios';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 
 export default function SubscribeButton({ channelId, onSubscribe }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const auth = useAuth();
 
-  const handleClick = () => {
-    setIsSubscribed(!isSubscribed);
-    if (onSubscribe) {
-      onSubscribe(channelId, !isSubscribed);
+  useEffect(() => {
+    const checkSubscription = async () => {
+      if (!channelId || !auth.user) {
+        setIsSubscribed(false);
+        return;
+      }
+      try {
+        const response = await apiUsers.checkSubscription(channelId);
+        setIsSubscribed(response.data.subscribed);
+      } catch (err) {
+        console.error('Error checking subscription:', err);
+        setIsSubscribed(false);
+      }
+    };
+    checkSubscription();
+  }, [channelId, auth.user]);
+
+  const handleClick = async () => {
+    if (!auth.user || isLoading) return;
+    
+    setIsLoading(true);
+    try {
+      if (isSubscribed) {
+        await apiUsers.unsubscribeFromChannel(channelId);
+      } else {
+        await apiUsers.subscribeToChannel(channelId);
+      }
+      setIsSubscribed(!isSubscribed);
+      if (onSubscribe) {
+        onSubscribe(channelId, !isSubscribed);
+      }
+    } catch (err) {
+      console.error('Subscription error:', err);
+      alert('Subscription failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -17,6 +53,7 @@ export default function SubscribeButton({ channelId, onSubscribe }) {
     <Button
       variant={isSubscribed ? 'outlined' : 'contained'}
       onClick={handleClick}
+      disabled={isLoading}
       startIcon={isSubscribed ? <NotificationsActiveIcon /> : <NotificationsIcon />}
       sx={{
         mb: 2,
@@ -44,7 +81,7 @@ export default function SubscribeButton({ channelId, onSubscribe }) {
         },
       }}
     >
-      {isSubscribed ? 'Subscribed' : 'Subscribe'}
+      {isLoading ? '...' : (isSubscribed ? 'Subscribed' : 'Subscribe')}
     </Button>
   );
 }

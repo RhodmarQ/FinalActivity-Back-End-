@@ -10,7 +10,8 @@ export default function Channel() {
   const { channelId } = useParams();
   const [channelVideos, setChannelVideos] = useState([]);
   const [channelInfo, setChannelInfo] = useState({ name: '', profilePic: '' });
-  const [subscribersCount, setSubscribersCount] = useState(0);
+const [subscribersCount, setSubscribersCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -40,7 +41,7 @@ export default function Channel() {
     };
 
     fetchChannelData();
-  }, [channelId]);
+  }, [channelId, refreshKey]);
 
   if (isLoading) return <LoadingSpinner />;
   if (error) return <Typography color="error">{error}</Typography>;
@@ -62,7 +63,7 @@ export default function Channel() {
             {subscribersCount.toLocaleString()} subscribers
           </Typography>
         </Box>
-        <SubscribeButton channelId={channelId} />
+        <SubscribeButton channelId={channelId} onSubscribe={() => setRefreshKey(prev => prev + 1)} />
       </Box>
 
       {/* Videos */}
