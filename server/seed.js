@@ -4,7 +4,13 @@ const Video = require('./models/Video');
 const User = require('./models/User');
 require('dotenv').config();
 
-mongoose.connect(process.env.MONGO_URI).then(async () => {
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+  family: 4,  // Use IPv4, skip IPv6 on Windows
+  maxPoolSize: 10,
+  bufferCommands: false
+}).then(async () => {
   console.log('Seeding...');
   await User.deleteMany({});
   await Video.deleteMany({});
