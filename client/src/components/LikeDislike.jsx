@@ -4,19 +4,16 @@ import { useState } from 'react';
 import { apiVideos } from '../api/axios';
 
 
-export default function LikeDislike({ 
+export default function LikeButton({ 
   videoId, 
   likesCount = 0, 
   liked: initialLiked = false,
-  onDislikeChange,
-  onLikeChange
+  onCountChange
  }) {
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(likesCount);
 
-
-
-  const handleLike = async () => {
+  const handleToggle = async () => {
     try {
       const isLiked = !liked;
       setLiked(isLiked);
@@ -26,20 +23,15 @@ export default function LikeDislike({
       
       setCount(response.data.likesCount);
       
-      // Update dislike count from response
-      if (onDislikeChange && response.data.dislikesCount !== undefined) {
-        onDislikeChange(response.data.dislikesCount);
-      }
-      if (onLikeChange && response.data.likesCount !== undefined) {
-        onLikeChange(response.data.likesCount);
+      if (onCountChange) {
+        onCountChange(response.data.likesCount);
       }
     } catch (err) {
-      console.error('Like failed', err);
+      console.error('Like toggle failed', err);
       setLiked(!liked);
       setCount(likesCount);
     }
   };
-
 
   return (
     <Stack
@@ -55,7 +47,7 @@ export default function LikeDislike({
       }}
     >
       <IconButton
-        onClick={handleLike}
+        onClick={handleToggle}
         sx={{
           color: liked ? '#FF00FF' : '#A0A0E0',
           transition: 'all 0.3s ease',

@@ -24,7 +24,6 @@ export const apiVideos = {
   create: (data) => API.post('/videos', data),
 
   toggleLike: (id, like) => API.put(`/videos/${id}/likes`, { like }),
-  toggleDislike: (id, dislike) => API.put(`/videos/${id}/dislikes`, { dislike }),
 
   deleteVideo: (id) => API.delete(`/videos/${id}`),
   deleteComment: (videoId, commentId) => API.delete(`/videos/${videoId}/comments/${commentId}`),

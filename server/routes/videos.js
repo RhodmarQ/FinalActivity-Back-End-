@@ -89,31 +89,24 @@ router.put('/:id/likes', auth, async (req, res) => {
     const video = await Video.findById(req.params.id).populate('channelId');
     if (!video) return res.status(404).json({ message: 'Video not found' });
     
-
     const user = await User.findById(req.userId);
     const isLiked = req.body.like;
     
     if (isLiked) {
-      // Like: add to likes, remove from dislikes
       if (!user.likes.some(id => id.toString() === req.params.id)) {
         user.likes.push(new mongoose.Types.ObjectId(req.params.id));
         video.likesCount += 1;
       }
-      user.dislikes = user.dislikes.filter(id => id.toString() !== req.params.id.toString());
-      if (video.dislikesCount > 0) video.dislikesCount -= 1;
     } else {
-      // Unlike
       user.likes = user.likes.filter(id => id.toString() !== req.params.id.toString());
       if (video.likesCount > 0) video.likesCount -= 1;
     }
-
     
     await user.save();
     await video.save();
     
     res.json({ 
-      likesCount: video.likesCount, 
-      dislikesCount: video.dislikesCount,
+      likesCount: video.likesCount,
       userLiked: isLiked 
     });
   } catch (err) {
@@ -123,42 +116,7 @@ router.put('/:id/likes', auth, async (req, res) => {
 
 
 
-// Toggle dislike - per user
 
-router.put('/:id/dislikes', auth, async (req, res) => {
-  try {
-    const video = await Video.findById(req.params.id).populate('channelId');
-    if (!video) return res.status(404).json({ message: 'Video not found' });
-    
-    const user = await User.findById(req.userId);
-    const isDisliked = req.body.dislike;
-    
-    if (isDisliked) {
-      // Dislike: add to dislikes, remove from likes
-      if (!user.dislikes.some(id => id.toString() === req.params.id.toString())) {
-        user.dislikes.push(new mongoose.Types.ObjectId(req.params.id));
-        video.dislikesCount += 1;
-      }
-      user.likes = user.likes.filter(id => id.toString() !== req.params.id.toString());
-      if (video.likesCount > 0) video.likesCount -= 1;
-    } else {
-      // Undislike
-      user.dislikes = user.dislikes.filter(id => id.toString() !== req.params.id.toString());
-      if (video.dislikesCount > 0) video.dislikesCount -= 1;
-    }
-    
-    await user.save();
-    await video.save();
-    
-    res.json({ 
-      likesCount: video.likesCount, 
-      dislikesCount: video.dislikesCount,
-      userDisliked: isDisliked 
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
 
 
 
@@ -195,13 +153,10 @@ router.get('/:id/action', auth, async (req, res) => {
     }
     
     const isLiked = user.likes.some(id => id.toString() === videoId);
-    const isDisliked = user.dislikes.some(id => id.toString() === videoId);
     
     res.json({
       isLiked,
-      isDisliked,
-      likesCount: video.likesCount,
-      dislikesCount: video.dislikesCount
+      likesCount: video.likesCount
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

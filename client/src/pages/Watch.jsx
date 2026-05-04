@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import VideoPlayer from '../components/VideoPlayer';
 
 import LikeDislike from '../components/LikeDislike';
-import DislikeButton from '../components/DislikeButton';
 
 import CommentSection from '../components/CommentSection';
 import VideoCard from '../components/VideoCard';
@@ -29,13 +28,10 @@ export default function Watch() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userLiked, setUserLiked] = useState(false);
-  const [userDisliked, setUserDisliked] = useState(false);
   const [localLikesCount, setLocalLikesCount] = useState(0);
-  const [localDislikesCount, setLocalDislikesCount] = useState(0);
   const auth = useAuth();
 
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const fetchVideo = async () => {
@@ -48,10 +44,7 @@ export default function Watch() {
 
         setVideo(videoData);
         setLocalLikesCount(videoData.likesCount || 0);
-        setLocalDislikesCount(videoData.dislikesCount || 0);
         setRecommended(recommendedData.filter((item) => item.id !== id).slice(0, 6));
-        
-
       } catch (err) {
         console.error(err);
       } finally {
@@ -68,16 +61,13 @@ export default function Watch() {
       try {
         const { data: actionData } = await apiVideos.getUserAction(id);
         setUserLiked(actionData.isLiked);
-        setUserDisliked(actionData.isDisliked);
         setLocalLikesCount(actionData.likesCount);
-        setLocalDislikesCount(actionData.dislikesCount);
       } catch (err) {
         console.error('Failed to fetch user action:', err);
       }
     };
     fetchUserAction();
   }, [auth.user]);
-
 
   const handlePlay = useCallback(async () => {
     if (auth.loading || !auth.user) return;
@@ -133,17 +123,7 @@ export default function Watch() {
                 videoId={video._id || video.id} 
                 likesCount={localLikesCount} 
                 liked={userLiked}
-                dislikesCount={localDislikesCount}
-                onDislikeChange={(newDislikesCount) => setLocalDislikesCount(newDislikesCount)}
-                onLikeChange={(newLikesCount) => setLocalLikesCount(newLikesCount)}
-              />
-              <DislikeButton 
-                videoId={video._id || video.id} 
-                dislikesCount={localDislikesCount}
-                disliked={userDisliked}
-                likesCount={localLikesCount}
-                onDislikeChange={(newDislikesCount) => setLocalDislikesCount(newDislikesCount)}
-                onLikeChange={(newLikesCount) => setLocalLikesCount(newLikesCount)}
+                onCountChange={(newLikesCount) => setLocalLikesCount(newLikesCount)}
               />
 
               <Button

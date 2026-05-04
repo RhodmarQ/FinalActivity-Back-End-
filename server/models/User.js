@@ -19,8 +19,7 @@ const userSchema = new mongoose.Schema({
     videoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Video' },
     watchedAt: { type: Date, default: Date.now }
   }],
-  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }],
-  dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }]
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Video' }]
 
 }, { timestamps: true });
 

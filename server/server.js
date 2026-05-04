@@ -2,7 +2,6 @@ require("dotenv").config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const { MongoMemoryServer } = require('mongodb-memory-server');
 require('dotenv').config();
 
 const app = express();
@@ -23,21 +22,18 @@ app.get('/', (req, res) => {
 app.use('/api/videos', require('./routes/videos'));
 app.use('/api/auth', require('./routes/auth'));
 
-// Start server with MongoDB
+// Start server with MongoDB Atlas
 const startServer = async () => {
   try {
-    let mongoUri = process.env.MONGO_URI;
+    const mongoUri = process.env.MONGO_URI;
     
-    // If no MONGO_URI, use MongoDB Memory Server (for development)
-    if (!mongoUri || mongoUri === 'mongodb://localhost:27017/clonetube') {
-      console.log('Starting MongoDB Memory Server...');
-      const mongoServer = await MongoMemoryServer.create();
-      mongoUri = mongoServer.getUri();
-      console.log('MongoDB Memory Server started');
+    if (!mongoUri) {
+      throw new Error('MONGO_URI environment variable is required for MongoDB Atlas connection. Please set it in your .env file.');
     }
     
+    console.log('Connecting to MongoDB Atlas...');
     await mongoose.connect(mongoUri);
-    console.log('MongoDB connected');
+    console.log('MongoDB Atlas connected');
     
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
