@@ -76,15 +76,6 @@ export default function VideoPlayer({ youtubeUrl, title, thumbnail, channel, cha
             >
               {title}
             </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                color: '#A0A0E0',
-                fontSize: '1.1rem',
-              }}
-            >
-              {channel || 'Unknown Channel'}
-            </Typography>
           </Box>
           {channelId && !isOwner && <SubscribeButton channelId={channelId} channelName={channel} />}
         </Box>
@@ -173,20 +164,9 @@ export default function VideoPlayer({ youtubeUrl, title, thumbnail, channel, cha
           >
             {title}
           </Typography>
-          <Typography
-            variant="body1"
-            sx={{
-              color: '#A0A0E0',
-              fontSize: '1.1rem',
-            }}
-          >
-            {channel || 'Unknown Channel'}
-          </Typography>
         </Box>
         {channelId && !isOwner && <SubscribeButton channelId={channelId} channelName={channel} />}
       </Box>
     </Box>
   );
 }
-
- 

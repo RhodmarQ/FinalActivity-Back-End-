@@ -115,12 +115,6 @@ export default function Watch() {
         />
 
         <Box sx={{ mb: 2 }}>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 700, mb: 1, color: "#FFFFFF" }}
-          >
-            {video.title}
-          </Typography>
           <Box
             sx={{
               display: "flex",
@@ -133,9 +127,6 @@ export default function Watch() {
             <Box>
               <Typography sx={{ color: "#A0A0E0", mb: 0.5 }}>
                 {video.views?.toLocaleString() || 0} views • {publishedDate}
-              </Typography>
-              <Typography sx={{ color: "#A0A0E0" }}>
-                Uploaded by <strong>{video.channel}</strong>
               </Typography>
             </Box>
 
