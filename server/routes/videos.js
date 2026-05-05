@@ -15,7 +15,6 @@ router.get("/", async (req, res) => {
   try {
     const videos = await Video.find()
       .sort({ timestamp: -1 })
-      .limit(20)
       .populate("channelId", "username email profilePic");
 
     const result = videos.map(video => ({
@@ -46,8 +45,7 @@ router.get("/search", async (req, res) => {
       title: { $regex: q.trim(), $options: "i" }
     })
       .populate("channelId", "username email profilePic")
-      .sort({ views: -1 })
-      .limit(20);
+      .sort({ views: -1 });
 
     res.json(
       videos.map(video => ({
@@ -288,8 +286,7 @@ router.get("/channels/:channelId", async (req, res) => {
 
     const videos = await Video.find({ channelId })
       .populate("channelId", "username profilePic")
-      .sort({ createdAt: -1 })
-      .limit(20);
+      .sort({ createdAt: -1 });
 
     res.json({
       videos: videos.map(v => ({
@@ -397,6 +394,48 @@ router.post("/users/:userId/history", auth, async (req, res) => {
     await user.save();
     
     res.json({ message: "Added to history" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* =========================
+   DELETE VIDEO
+========================= */
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id);
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+    // Only allow owner to delete
+    if (String(video.channelId) !== String(req.userId)) {
+      return res.status(403).json({ message: "Not authorized to delete this video" });
+    }
+    await Video.findByIdAndDelete(req.params.id);
+    // Delete all comments for this video
+    await Comment.deleteMany({ videoId: req.params.id });
+    res.json({ message: "Video deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+/* =========================
+   DELETE COMMENT
+========================= */
+router.delete("/:videoId/comments/:commentId", auth, async (req, res) => {
+  try {
+    const comment = await Comment.findById(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+    // Only allow owner to delete
+    if (String(comment.userId) !== String(req.userId)) {
+      return res.status(403).json({ message: "Not authorized to delete this comment" });
+    }
+    await Comment.findByIdAndDelete(req.params.commentId);
+    res.json({ message: "Comment deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
