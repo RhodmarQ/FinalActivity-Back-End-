@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
   try {
     const videos = await Video.find()
       .sort({ timestamp: -1 })
-      .limit(20)
+      .limit(1000)
       .populate("channelId", "username email profilePic");
 
     const result = videos.map(video => ({
