@@ -66,16 +66,26 @@ export default function VideoPlayer({ youtubeUrl, title, thumbnail, channel, cha
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           <Box>
-            <Typography
-              variant="h5"
-              sx={{
-                color: '#E0E0FF',
-                fontWeight: 600,
-                mb: 1,
-              }}
-            >
-              {title}
-            </Typography>
+<Typography
+            variant="h5"
+            sx={{
+              color: '#E0E0FF',
+              fontWeight: 600,
+              mb: 1,
+            }}
+          >
+            {title}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: '#A0A0E0',
+              mb: 2,
+            }}
+          >
+            {channel}
+          </Typography>
+
           </Box>
           {channelId && !isOwner && <SubscribeButton channelId={channelId} channelName={channel} />}
         </Box>
@@ -163,6 +173,15 @@ export default function VideoPlayer({ youtubeUrl, title, thumbnail, channel, cha
             }}
           >
             {title}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: '#A0A0E0',
+              mb: 2,
+            }}
+          >
+            {channel}
           </Typography>
         </Box>
         {channelId && !isOwner && <SubscribeButton channelId={channelId} channelName={channel} />}
