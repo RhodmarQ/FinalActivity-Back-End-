@@ -96,14 +96,7 @@ export default function Watch() {
   if (loading || !video) return <Typography>Loading...</Typography>;
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: { xs: "column", lg: "row" },
-        gap: 3,
-        pb: 4,
-      }}
-    >
+    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 3, pb: 4 }}>
       <Box sx={{ flex: 2 }}>
         <VideoPlayer
           youtubeUrl={video.youtubeUrl}
@@ -115,58 +108,42 @@ export default function Watch() {
         />
 
         <Box sx={{ mb: 2 }}>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 700, mb: 1, color: "#FFFFFF" }}
-          >
+          <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, color: '#FFFFFF' }}>
             {video.title}
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              justifyContent: "space-between",
-              gap: 2,
-              alignItems: { xs: "flex-start", md: "center" },
-            }}
-          >
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, justifyContent: 'space-between', gap: 2, alignItems: { xs: 'flex-start', md: 'center' } }}>
             <Box>
-              <Typography sx={{ color: "#A0A0E0", mb: 0.5 }}>
-                {video.views?.toLocaleString() || 0} views • {publishedDate}
-              </Typography>
-              <Typography sx={{ color: "#A0A0E0" }}>
-                Uploaded by <strong>{video.channel}</strong>
-              </Typography>
+              <Typography sx={{ color: '#A0A0E0', mb: 0.5 }}>{video.views?.toLocaleString() || 0} views • {publishedDate}</Typography>
+              <Typography sx={{ color: '#A0A0E0' }}>Uploaded by <strong>{video.channel}</strong></Typography>
             </Box>
 
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              <LikeDislike
-                videoId={video._id || video.id}
-                likesCount={localLikesCount}
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+
+              <LikeDislike 
+                videoId={video._id || video.id} 
+                likesCount={localLikesCount} 
                 liked={userLiked}
-                onCountChange={(newLikesCount) =>
-                  setLocalLikesCount(newLikesCount)
-                }
+                onCountChange={(newLikesCount) => setLocalLikesCount(newLikesCount)}
               />
 
               <Button
                 variant="outlined"
                 startIcon={<ShareIcon />}
-                sx={{ borderColor: "#7C4DFF", color: "#E0E0FF" }}
+                sx={{ borderColor: '#7C4DFF', color: '#E0E0FF' }}
               >
                 Share
               </Button>
               <Button
                 variant="outlined"
                 startIcon={<DownloadIcon />}
-                sx={{ borderColor: "#7C4DFF", color: "#E0E0FF" }}
+                sx={{ borderColor: '#7C4DFF', color: '#E0E0FF' }}
               >
                 Download
               </Button>
               <Button
                 variant="outlined"
                 startIcon={<BookmarkIcon />}
-                sx={{ borderColor: "#7C4DFF", color: "#E0E0FF" }}
+                sx={{ borderColor: '#7C4DFF', color: '#E0E0FF' }}
               >
                 Save
               </Button>
@@ -181,24 +158,13 @@ export default function Watch() {
                 </Button>
               )}
             </Box>
+
           </Box>
         </Box>
 
-        <Box
-          sx={{
-            mb: 3,
-            p: 2,
-            borderRadius: 2,
-            backgroundColor: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <Typography variant="subtitle1" sx={{ color: "#FFFFFF", mb: 1 }}>
-            Description
-          </Typography>
-          <Typography sx={{ color: "#D0D0E0", whiteSpace: "pre-line" }}>
-            {video.description}
-          </Typography>
+        <Box sx={{ mb: 3, p: 2, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <Typography variant="subtitle1" sx={{ color: '#FFFFFF', mb: 1 }}>Description</Typography>
+          <Typography sx={{ color: '#D0D0E0', whiteSpace: 'pre-line' }}>{video.description}</Typography>
         </Box>
 
         <CommentSection videoId={video._id || video.id} />
@@ -207,33 +173,26 @@ export default function Watch() {
       <Box
         sx={{
           flex: 1,
-          minWidth: { xs: "100%", md: "340px" },
-          maxWidth: { md: "px" },
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-          minHeight: "85vh",
-          maxHeight: "none",
-          overflowY: "auto",
+          minWidth: { xs: '100%', md: '340px' },
+          maxWidth: { md: '420px' },
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+          maxHeight: 'calc(100vh - 120px)',
+          overflowY: 'auto',
         }}
       >
-        <Typography sx={{ color: "#FFFFFF", fontWeight: 700 }}>
-          Up next
-        </Typography>
+        <Typography sx={{ color: '#FFFFFF', fontWeight: 700 }}>Up next</Typography>
         {recommended.map((item) => (
           <VideoCard key={item.id} video={item} fullWidth />
         ))}
       </Box>
 
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-      >
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Delete Video?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            This will permanently delete "{video.title}". This action cannot be
-            undone.
+            This will permanently delete "{video.title}". This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

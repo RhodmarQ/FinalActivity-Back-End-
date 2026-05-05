@@ -55,7 +55,7 @@ export default function VideoCard({ video, fullWidth = false }) {
           position: 'relative',
           overflow: 'hidden',
           backgroundColor: 'rgba(124, 77, 255, 0.1)',
-          height: fullWidth ? 240 : 500,
+          height: 180,
         }}
       >
         <CardMedia
